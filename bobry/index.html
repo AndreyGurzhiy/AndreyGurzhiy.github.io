@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e2a2c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Бобры">
+<title>Бобры — семейная карточная игра</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦫</text></svg>">
+<style>
+:root{
+  --bg:#0e2a2c; --bg2:#143a3d; --panel:#1b4a4d; --line:#2c6266;
+  --text:#f3f1e8; --muted:#a9c4c2; --accent:#f2b134; --accent2:#e9774a;
+  --good:#46b06e; --bad:#e0533d; --purple:#7b5cf0;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+input{font:inherit;-webkit-user-select:text;user-select:text}
+.btn{background:var(--accent);color:#2a1d05;font-weight:700;border-radius:14px;padding:14px 18px;font-size:17px;
+  box-shadow:0 3px 0 #a87412;transition:transform .05s}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #a87412}
+.btn.secondary{background:var(--panel);color:var(--text);box-shadow:0 3px 0 #0b2224}
+.btn.danger{background:var(--bad);color:#fff;box-shadow:0 3px 0 #8f2a1d}
+.btn.small{padding:9px 13px;font-size:15px;border-radius:11px}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn.on{background:var(--accent2);color:#fff;box-shadow:0 3px 0 #9b4423}
+.field{width:100%;padding:14px;border-radius:12px;border:2px solid var(--line);background:var(--bg2);color:var(--text);font-size:18px;outline:none}
+.field:focus{border-color:var(--accent)}
+.muted{color:var(--muted)}
+.center{text-align:center}
+.row{display:flex;gap:10px;align-items:center}
+.col{display:flex;flex-direction:column;gap:12px}
+.grow{flex:1}
+
+/* home */
+.home{padding:28px 20px;gap:18px}
+.logo{font-size:64px;text-align:center;margin-top:10px;line-height:1}
+.title{font-size:34px;font-weight:800;text-align:center;letter-spacing:.5px;margin:4px 0 0}
+.subtitle{text-align:center;color:var(--muted);margin:0 0 6px}
+.card-panel{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:16px}
+.code-input{text-transform:uppercase;letter-spacing:6px;text-align:center;font-weight:800}
+.linkbtn{background:none;color:var(--muted);text-decoration:underline;padding:6px}
+
+/* lobby */
+.lobby{padding:20px;gap:14px}
+.bigcode{font-size:52px;font-weight:900;letter-spacing:10px;text-align:center;color:var(--accent);margin:2px 0}
+.qr{background:#fff;border-radius:14px;padding:10px;width:200px;height:200px;margin:0 auto}
+.qr svg{width:100%;height:100%;display:block}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.plist li{background:var(--panel);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;font-size:17px}
+.seg{display:flex;background:var(--bg2);border-radius:12px;padding:4px;gap:4px}
+.seg button{flex:1;background:none;padding:10px;border-radius:9px;font-weight:700;color:var(--muted)}
+.seg button.sel{background:var(--panel);color:var(--text)}
+
+/* game */
+.top{display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:14px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--bad);display:inline-block}
+.dot.ok{background:var(--good)}
+.opps{display:flex;flex-direction:column;gap:6px;padding:0 10px}
+.opp{display:flex;align-items:center;gap:8px;background:var(--bg2);border:2px solid transparent;border-radius:14px;padding:7px 9px}
+.opp.turn{border-color:var(--accent)}
+.opp .nm{flex:1;min-width:0;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opp .sc{font-size:12px;color:var(--muted);font-weight:500;display:block}
+.mini{display:flex;gap:4px}
+.table{display:flex;justify-content:center;align-items:flex-end;gap:18px;padding:14px 10px 6px}
+.pile{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
+.status{margin:6px 12px;padding:12px 14px;background:var(--panel);border-radius:14px;font-size:16px;line-height:1.35;min-height:48px;text-align:center}
+.status b{color:var(--accent)}
+.me{padding:4px 10px 6px}
+.mecards{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;padding:8px 12px}
+.log{padding:4px 14px 18px;font-size:13px;color:var(--muted);line-height:1.5}
+.log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.banner{margin:6px 12px;padding:12px;border-radius:14px;background:#3b2f0b;border:1px solid var(--accent);text-align:center}
+
+/* cards */
+.card{position:relative;border-radius:12px;aspect-ratio:5/7;width:100%;display:flex;align-items:center;justify-content:center;
+  font-weight:900;box-shadow:0 3px 8px rgba(0,0,0,.35);transition:transform .15s, box-shadow .15s;overflow:hidden}
+.card.back{background:
+  radial-gradient(circle at 50% 50%, rgba(255,255,255,.10) 22%, transparent 23%) 0 0/12px 12px,
+  linear-gradient(160deg,#2f8a86,#174a5e);border:3px solid #e8e2cf}
+.card.back::after{content:"🦫";font-size:1.6em;opacity:.55;filter:grayscale(.3)}
+.card.num{background:#fbf6e9;color:#222;border:3px solid #fff}
+.card.num .n{font-size:2.3em;line-height:1}
+.card.num .e{position:absolute;bottom:6%;font-size:.95em}
+.card.num .c{position:absolute;top:5%;left:9%;font-size:.7em}
+.card.sp{background:linear-gradient(160deg,#9378ff,#5a3ed1);color:#fff;border:3px solid #fff;flex-direction:column}
+.card.sp .i{font-size:1.9em;line-height:1}
+.card.sp .l{font-size:.55em;font-weight:700;margin-top:4px;text-align:center;line-height:1.1}
+.card.empty{background:rgba(255,255,255,.05);border:2px dashed var(--line);box-shadow:none}
+.card.big{font-size:22px}
+.card.mid{font-size:16px;width:74px}
+.card.sm{font-size:10px;width:30px;border-width:2px;border-radius:6px}
+.card.sm.back::after{font-size:1.2em}
+.card.sm .l,.card.sm .e,.card.sm .c{display:none}
+.card.sm .n{font-size:1.9em}
+.card.sm .i{font-size:1.6em}
+.card.tap{cursor:pointer;box-shadow:0 0 0 3px var(--accent),0 3px 8px rgba(0,0,0,.35)}
+.card.tap:active{transform:scale(.96)}
+.card.sel{transform:translateY(-8px);box-shadow:0 0 0 4px var(--accent2),0 8px 14px rgba(0,0,0,.4)}
+.card.hl{animation:hl 1.2s ease-in-out 3}
+@keyframes hl{50%{box-shadow:0 0 0 5px #fff,0 0 22px 6px var(--accent)}}
+.card.peekshow{box-shadow:0 0 0 4px var(--good),0 3px 8px rgba(0,0,0,.35)}
+.lbl{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+
+/* overlays */
+.ov{position:fixed;inset:0;background:rgba(5,18,19,.86);display:flex;align-items:flex-start;justify-content:center;z-index:20;overflow:auto;
+  padding:calc(env(safe-area-inset-top) + 16px) 12px calc(env(safe-area-inset-bottom) + 16px)}
+.modal{background:var(--bg2);border:1px solid var(--line);border-radius:20px;padding:18px;width:100%;max-width:520px}
+.modal h2{margin:0 0 12px;text-align:center}
+.res{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.res .r{background:var(--panel);border-radius:12px;padding:10px 12px}
+.res .r.win{border:2px solid var(--accent)}
+.res .top2{display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px}
+.res .cards{display:flex;gap:5px;align-items:center}
+.res .cards .card{width:38px;font-size:12px}
+.res .was{font-size:11px;color:var(--muted);margin-left:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 18px);z-index:30;
+  background:#fff;color:#1d1d1d;padding:12px 16px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.4);font-weight:600;
+  max-width:92%;text-align:center;animation:tin .25s}
+@keyframes tin{from{opacity:0;transform:translate(-50%,10px)}}
+.rules p{margin:8px 0;line-height:1.45}
+.rules .mini-card{display:inline-block;width:28px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="ovl"></div>
+<div id="toast"></div>
+
+<script src="mqtt.min.js"></script>
+<script src="qrcode.js"></script>
+<script>
+"use strict";
+/* ============================================================
+   НАСТРОЙКИ
+   ============================================================ */
+const NS = "bobry-family-v1-7kq";          // пространство имён комнат
+const params = new URLSearchParams(location.search);
+const BROKERS = params.get("broker") ? [params.get("broker")] : [
+  "wss://broker.emqx.io:8084/mqtt",
+  "wss://broker.hivemq.com:8884/mqtt",
+];
+const MAX_PLAYERS = 6;
+const OFFLINE_MS = 30000;
+
+/* ============================================================
+   ХРАНИЛИЩЕ
+   ============================================================ */
+const LS = {
+  get(k, d=null){ try{ const v = localStorage.getItem("bobry:"+k); return v===null? d : JSON.parse(v);}catch(e){return d;} },
+  set(k, v){ try{ localStorage.setItem("bobry:"+k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem("bobry:"+k); }catch(e){} }
+};
+function rid(n=10){ const a="abcdefghijkmnpqrstuvwxyz23456789"; let s=""; for(let i=0;i<n;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
+let myId = LS.get("id"); if(!myId){ myId = rid(12); LS.set("id", myId); }
+let myName = LS.get("name", "");
+
+/* ============================================================
+   КАРТЫ И ЛОГИКА
+   ============================================================ */
+const SP = {
+  P:{icon:"👁", name:"Подсмотри", desc:"посмотри одну свою карту"},
+  S:{icon:"🔄", name:"Обмен",     desc:"поменяй свою карту с картой соперника (не глядя)"},
+  D:{icon:"✌️", name:"Ещё две",   desc:"тяни ещё до двух карт из колоды"},
+};
+const isNum = c => typeof c === "number";
+function cardName(c){ return isNum(c) ? String(c) : SP[c].icon + " " + SP[c].name; }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function newDeck(){
+  const d=[];
+  for(let n=0;n<=8;n++) for(let i=0;i<4;i++) d.push(n);
+  for(let i=0;i<9;i++) d.push(9);
+  for(const s of "PSD") for(let i=0;i<7;i++) d.push(s);
+  return shuffle(d); // 66 карт
+}
+const clone = o => JSON.parse(JSON.stringify(o));
+function pname(s,i){ return s.players[i] ? s.players[i].name : "?"; }
+function log(s, msg){ s.log.push(msg); if(s.log.length>30) s.log = s.log.slice(-30); }
+function ev(s, e){ s.evs.push(e); }
+
+function popDeck(s){
+  if(!s.deck.length){
+    const top = s.discard.pop();
+    s.deck = shuffle(s.discard);
+    s.discard = top===undefined ? [] : [top];
+    log(s, "Колода закончилась — сброс перемешан");
+  }
+  if(!s.deck.length) s.deck = newDeck();
+  return s.deck.pop();
+}
+
+function deal(s){
+  s.deck = newDeck(); s.discard = [];
+  s.players.forEach(p => { p.cards = [s.deck.pop(), s.deck.pop(), s.deck.pop(), s.deck.pop()]; });
+  let c = s.deck.pop();
+  while(!isNum(c)){ s.deck.unshift(c); c = s.deck.pop(); }
+  s.discard.push(c);
+  s.turn = s.starter % s.players.length;
+  s.step = "start"; s.drawn = null; s.fromDiscard = false; s.d2 = 0;
+  s.caller = null; s.stopReq = false; s.reveal = null; s.phase = "play";
+  log(s, `Раунд ${s.round}. Начинает ${pname(s,s.turn)}`);
+}
+
+function endTurn(s){
+  if(s.stopReq && s.caller === null){
+    s.caller = s.turn;
+    log(s, `📣 ${pname(s,s.turn)}: «Стоп!» — у остальных последний ход`);
+    ev(s, {type:"stop", by:s.turn});
+  }
+  s.stopReq = false; s.step = "start"; s.drawn = null; s.fromDiscard = false; s.d2 = 0;
+  s.turn = (s.turn + 1) % s.players.length;
+  if(s.caller !== null && s.turn === s.caller) endRound(s);
+}
+
+function endRound(s){
+  s.reveal = s.players.map(p => {
+    const orig = p.cards.slice();
+    const fin = p.cards.map(c => { while(!isNum(c)){ s.discard.push(c); c = popDeck(s); } return c; });
+    const score = fin.reduce((a,b)=>a+b, 0);
+    p.total += score; p.hist.push(score);
+    return {orig, fin, score};
+  });
+  const over = s.players.some(p => p.total >= s.target);
+  s.phase = over ? "gameEnd" : "roundEnd";
+  log(s, over ? "Игра окончена!" : `Раунд ${s.round} окончен`);
+}
+
+/* Действия. Каждое получает копию состояния и меняет её. Возврат false = нельзя. */
+const ACT = {
+  // --- лобби ---
+  addPlayer(s, a){
+    if(s.phase!=="lobby" || s.players.some(p=>p.id===a.id) || s.players.length>=MAX_PLAYERS) return false;
+    s.players.push({id:a.id, name:String(a.name||"Игрок").slice(0,16), cards:[], total:0, hist:[]});
+    log(s, `${a.name} в игре`);
+  },
+  removePlayer(s, a){
+    if(s.phase!=="lobby") return false;
+    const i = s.players.findIndex(p=>p.id===a.id); if(i<0) return false;
+    s.players.splice(i,1);
+    if(s.host===a.id && s.players.length) s.host = s.players[0].id;
+  },
+  setTarget(s, a){ if(s.phase!=="lobby") return false; s.target = a.target; },
+  start(s){
+    if(s.phase!=="lobby" || s.players.length<2) return false;
+    s.players.forEach(p=>{p.total=0; p.hist=[];});
+    s.round = 1; s.gid = rid(6); s.starter = Math.floor(Math.random()*s.players.length);
+    deal(s);
+  },
+  nextRound(s){
+    if(s.phase!=="roundEnd") return false;
+    s.round++; s.starter = (s.starter+1) % s.players.length; deal(s);
+  },
+  toLobby(s){
+    if(s.phase!=="gameEnd") return false;
+    s.phase = "lobby"; s.reveal = null; s.players.forEach(p=>{p.total=0;p.hist=[];p.cards=[];});
+    log(s, "Новая игра — ждём игроков");
+  },
+  // --- ход ---
+  draw(s){
+    if(s.step!=="start") return false;
+    s.drawn = popDeck(s); s.fromDiscard = false; s.step = "drawn";
+  },
+  take(s){
+    const top = s.discard[s.discard.length-1];
+    if(s.step!=="start" || !isNum(top)) return false;
+    s.drawn = s.discard.pop(); s.fromDiscard = true; s.step = "drawn";
+  },
+  cancelTake(s){
+    if(s.step!=="drawn" || !s.fromDiscard) return false;
+    s.discard.push(s.drawn); s.drawn = null; s.fromDiscard = false; s.step = "start";
+  },
+  place(s, a){
+    if(s.step!=="drawn" || !isNum(s.drawn)) return false;
+    const me = s.players[s.turn], i = a.i; if(!(i>=0 && i<4)) return false;
+    const old = me.cards[i];
+    me.cards[i] = s.drawn; s.discard.push(old);
+    log(s, `${me.name}: ${s.fromDiscard ? "взял "+s.drawn+" из сброса" : "карта из колоды"} → место №${i+1}, сбросил ${cardName(old)}`);
+    ev(s, {type:"place", by:s.turn, i});
+    endTurn(s);
+  },
+  discard(s){
+    if(s.step!=="drawn" || s.fromDiscard) return false;
+    const me = s.players[s.turn];
+    s.discard.push(s.drawn);
+    log(s, `${me.name} сбросил ${cardName(s.drawn)}`);
+    s.drawn = null;
+    if(s.d2===2){ s.d2 = 1; s.drawn = popDeck(s); s.fromDiscard = false; }
+    else endTurn(s);
+  },
+  play(s){
+    if(s.step!=="drawn" || s.fromDiscard || isNum(s.drawn)) return false;
+    const c = s.drawn, me = s.players[s.turn];
+    s.discard.push(c); s.drawn = null;
+    log(s, `${me.name} играет ${cardName(c)}`);
+    if(c==="P"){ s.step="peek"; s.d2=0; }
+    else if(c==="S"){ s.step="swap"; s.d2=0; }
+    else { s.d2 = 2; s.drawn = popDeck(s); s.fromDiscard = false; s.step = "drawn"; }
+  },
+  peek(s, a){
+    if(s.step!=="peek" || !(a.i>=0 && a.i<4)) return false;
+    log(s, `${pname(s,s.turn)} подсмотрел свою карту №${a.i+1}`);
+    ev(s, {type:"peek", by:s.turn, i:a.i});
+    endTurn(s);
+  },
+  swap(s, a){
+    if(s.step!=="swap" || a.p===s.turn || !s.players[a.p] || !(a.mi>=0&&a.mi<4) || !(a.oi>=0&&a.oi<4)) return false;
+    const me = s.players[s.turn], o = s.players[a.p];
+    [me.cards[a.mi], o.cards[a.oi]] = [o.cards[a.oi], me.cards[a.mi]];
+    log(s, `🔄 ${me.name}: своя №${a.mi+1} ⇄ №${a.oi+1} у ${o.name}`);
+    ev(s, {type:"swap", by:s.turn, mi:a.mi, p:a.p, oi:a.oi});
+    endTurn(s);
+  },
+  skip(s){
+    if(s.step!=="peek" && s.step!=="swap") return false;
+    log(s, `${pname(s,s.turn)} пропустил действие`);
+    endTurn(s);
+  },
+  stop(s){ if(s.caller!==null) return false; s.stopReq = !s.stopReq; },
+  forceSkip(s){ // если игрок отключился
+    if(s.phase!=="play") return false;
+    if(s.drawn!==null){ s.discard.push(s.drawn); s.drawn=null; }
+    log(s, `Ход ${pname(s,s.turn)} пропущен (нет связи)`);
+    s.stopReq = false; endTurn(s);
+  },
+};
+const TURN_ACTS = new Set(["draw","take","cancelTake","place","discard","play","peek","swap","skip","stop"]);
+
+/* ============================================================
+   СЕТЬ (MQTT, два брокера параллельно — что быстрее, то и работает)
+   ============================================================ */
+let cur = null;          // текущее состояние игры
+let room = null;         // код комнаты
+let clients = [];
+const seen = {};         // id -> время последнего сигнала
+let joinTimer = null, hbTimer = null, searchStart = 0;
+const topic = (sub) => `${NS}/${room}/${sub}`;
+
+function newer(a, b){ // a новее b?
+  if(!b) return true;
+  if(a.v !== b.v) return a.v > b.v;
+  return String(a.w) > String(b.w);
+}
+
+function connect(code){
+  disconnect();
+  room = code; searchStart = Date.now();
+  const saved = LS.get("state:"+code);
+  if(saved && saved.code===code) cur = saved;
+  clients = BROKERS.map((url, bi) => {
+    let c;
+    try{
+      c = mqtt.connect(url, {clientId:"bb_"+rid(10), keepalive:30, reconnectPeriod:2500, connectTimeout:10000, clean:true});
+    }catch(e){ return null; }
+    c._bv = -1; c._ok = false;
+    c.on("connect", () => {
+      c._ok = true; render();
+      c.subscribe(`${NS}/${code}/#`, {qos:1});
+      // если у нас состояние новее, чем на брокере — досылаем
+      setTimeout(() => { if(cur && room===code && cur.v > c._bv && c.connected) pubTo(c, cur); }, 1800);
+    });
+    c.on("close", () => { c._ok = false; render(); });
+    c.on("offline", () => { c._ok = false; render(); });
+    c.on("error", () => {});
+    c.on("message", (t, buf) => onMsg(c, t, buf));
+    return c;
+  }).filter(Boolean);
+  clearInterval(hbTimer);
+  hbTimer = setInterval(() => publish("hb", {id:myId}, false), 8000);
+  setTimeout(() => publish("hb", {id:myId}, false), 1200);
+}
+function disconnect(){
+  clearInterval(hbTimer); clearInterval(joinTimer);
+  clients.forEach(c => { try{ c.end(true); }catch(e){} });
+  clients = []; cur = null; room = null;
+}
+function online(){ return clients.some(c => c.connected); }
+function pubTo(c, s){ try{ c.publish(topic("state"), JSON.stringify(s), {qos:1, retain:true}); }catch(e){} }
+function publish(sub, data, retain){
+  const msg = JSON.stringify(data);
+  clients.forEach(c => { try{ c.publish(topic(sub), msg, {qos: retain?1:0, retain:!!retain}); }catch(e){} });
+}
+function onMsg(c, t, buf){
+  let d; try{ d = JSON.parse(buf.toString()); }catch(e){ return; }
+  const sub = t.split("/").pop();
+  if(sub==="state"){
+    if(!d || d.code!==room) return;
+    if(typeof d.v==="number" && d.v > c._bv) c._bv = d.v;
+    if(d.w) seen[d.w] = Date.now();
+    if(newer(d, cur)) applyState(d);
+  } else if(sub==="hb"){
+    if(d && d.id) seen[d.id] = Date.now();
+  } else if(sub==="join"){
+    if(d && d.id) seen[d.id] = Date.now();
+    handleJoin(d);
+  }
+}
+function handleJoin(d){
+  if(!cur || cur.phase!=="lobby" || !d || !d.id) return;
+  if(cur.players.some(p=>p.id===d.id)) return;
+  const amHost = cur.host===myId;
+  const hostAway = !isOnline(cur.host);
+  const amFirstOther = cur.players.find(p=>p.id!==cur.host && isOnline(p.id))?.id === myId;
+  if(amHost || (hostAway && amFirstOther)) doAct("addPlayer", {id:d.id, name:d.name}, true);
+}
+function isOnline(id){ return id===myId || (Date.now() - (seen[id]||searchStart)) < OFFLINE_MS; }
+
+let lastEvn = 0, lastGidRound = "";
+function applyState(s){
+  const prev = cur;
+  cur = s;
+  LS.set("state:"+room, s);
+  // события (подсветка, тосты)
+  if(s.evn && s.evn !== lastEvn){
+    const fresh = !!prev && prev.evn !== s.evn;
+    lastEvn = s.evn;
+    if(fresh) handleEvents(s, prev);
+  }
+  if(prev && prev.phase==="play" && s.phase!=="play"){ $toast.innerHTML = ""; }
+  if(prev && prev.phase==="play" && s.phase==="play" && s.turn===meIdx() && prev.turn!==s.turn){
+    try{ navigator.vibrate && navigator.vibrate(120); }catch(e){}
+  }
+  render();
+}
+
+function doAct(name, a={}, system=false){
+  if(!cur) return;
+  const mi = meIdx();
+  if(TURN_ACTS.has(name) && (cur.phase!=="play" || cur.turn!==mi)) return;
+  const s = clone(cur);
+  s.evs = [];
+  if(ACT[name](s, a) === false) return;
+  s.v = (cur.v||0) + 1; s.w = myId;
+  if(s.evs.length) s.evn = rid(6); else { s.evs = cur.evs || []; s.evn = cur.evn; }
+  ui.sel = null;
+  applyState(s);
+  publish("state", s, true);
+}
+
+/* ============================================================
+   ИНТЕРФЕЙС
+   ============================================================ */
+const ui = { view:"home", sel:null, reveal:null, hl:[], toastTimer:null, rules:false, joining:false, err:"" };
+const $app = document.getElementById("app"), $ovl = document.getElementById("ovl"), $toast = document.getElementById("toast");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function meIdx(){ return cur ? cur.players.findIndex(p=>p.id===myId) : -1; }
+
+function toast(msg, ms=3500){ showToast(msg, ms); }
+function showToast(msg, ms=3500){
+  $toast.innerHTML = `<div class="toast">${msg}</div>`;
+  clearTimeout(ui.toastTimer);
+  ui.toastTimer = setTimeout(() => { $toast.innerHTML = ""; }, ms);
+}
+function handleEvents(s){
+  const me = s.players.findIndex(p=>p.id===myId);
+  const until = Date.now() + 3800;
+  const msgs = [];
+  const toast = (m) => msgs.push(m);
+  for(const e of (s.evs||[])){
+    if(e.type==="place") ui.hl.push({p:e.by, i:e.i, until});
+    if(e.type==="swap"){
+      ui.hl.push({p:e.by, i:e.mi, until}); ui.hl.push({p:e.p, i:e.oi, until});
+      if(e.p===me) toast(`🔄 <b>${esc(pname(s,e.by))}</b> забрал(а) твою карту №${e.oi+1} и дал(а) свою!`, 5000);
+    }
+    if(e.type==="peek" && e.by!==me) { ui.hl.push({p:e.by, i:e.i, until}); toast(`👁 ${esc(pname(s,e.by))} подсмотрел(а) свою карту №${e.i+1}`); }
+    if(e.type==="stop" && e.by!==me) toast(`📣 <b>${esc(pname(s,e.by))}</b> сказал(а) «Стоп!» — у тебя последний ход`, 5000);
+  }
+  if(msgs.length) showToast(msgs.join("<br>"), 5000);
+  setTimeout(render, 3900);
+}
+const isHl = (p,i) => ui.hl.some(h => h.p===p && h.i===i && h.until > Date.now());
+
+function cardHTML(c, o={}){
+  const size = o.size || "big";
+  const attrs = (o.act ? ` data-act="${o.act}"` : "") + (o.data ? " " + Object.entries(o.data).map(([k,v])=>`data-${k}="${v}"`).join(" ") : "");
+  const cls = ["card", size, o.tap?"tap":"", o.sel?"sel":"", o.hl?"hl":"", o.peek?"peekshow":""].join(" ");
+  if(c===undefined || c===null) return `<div class="${cls} empty"${attrs}></div>`;
+  if(!o.up) return `<div class="${cls} back"${attrs}></div>`;
+  if(isNum(c)){
+    const hue = 130 - c*13; // зелёный → красный
+    const e = c<=4 ? "🦫" : "🐀";
+    return `<div class="${cls} num"${attrs} style="color:hsl(${hue},62%,36%);border-color:hsl(${hue},55%,70%)"><span class="c">${c}</span><span class="n">${c}</span><span class="e">${e}</span></div>`;
+  }
+  return `<div class="${cls} sp"${attrs}><span class="i">${SP[c].icon}</span><span class="l">${SP[c].name}</span></div>`;
+}
+
+function render(){
+  // авто-переход между экранами
+  if(room && cur){
+    const mi = meIdx();
+    if(mi<0){ ui.view = cur.phase==="lobby" ? "joining" : "locked"; }
+    else ui.view = cur.phase==="lobby" ? "lobby" : "game";
+  } else if(room){ ui.view = "joining"; }
+  else ui.view = "home";
+
+  if(ui.view==="home") renderHome();
+  else if(ui.view==="joining") renderJoining();
+  else if(ui.view==="locked") renderLocked();
+  else if(ui.view==="lobby") renderLobby();
+  else renderGame();
+  renderOverlay();
+}
+
+function renderHome(){
+  const pre = (params.get("room")||"").toUpperCase().slice(0,4);
+  const last = LS.get("room");
+  // не перерисовываем поля, если пользователь печатает
+  if(document.getElementById("homeName")) return;
+  $app.innerHTML = `
+  <div class="col home">
+    <div class="logo">🦫</div>
+    <h1 class="title">Бобры</h1>
+    <p class="subtitle">Собери самую маленькую сумму из четырёх карт</p>
+    <div class="card-panel col">
+      <label class="muted">Как тебя зовут?</label>
+      <input id="homeName" class="field" maxlength="16" placeholder="Имя" value="${esc(myName)}" autocomplete="off">
+    </div>
+    ${pre ? `
+    <div class="card-panel col">
+      <div class="center">Приглашение в комнату <b style="color:var(--accent);letter-spacing:3px">${esc(pre)}</b></div>
+      <button class="btn" data-act="joinPre">Войти в игру</button>
+    </div>` : `
+    <button class="btn" data-act="create">Создать игру</button>
+    <div class="card-panel col">
+      <label class="muted">Есть код комнаты?</label>
+      <div class="row">
+        <input id="homeCode" class="field code-input grow" maxlength="4" placeholder="КОД" autocomplete="off" autocapitalize="characters">
+        <button class="btn secondary" data-act="join">Войти</button>
+      </div>
+    </div>`}
+    ${last && !pre ? `<button class="btn secondary" data-act="rejoin" data-code="${esc(last)}">Вернуться в комнату ${esc(last)}</button>` : ""}
+    ${ui.err ? `<div class="banner">${esc(ui.err)}</div>` : ""}
+    <button class="linkbtn" data-act="rules">Правила игры</button>
+  </div>`;
+}
+
+function renderJoining(){
+  const waited = Date.now() - searchStart;
+  const conn = online();
+  $app.innerHTML = `
+  <div class="col home">
+    <div class="logo">🦫</div>
+    <h2 class="center">Комната ${esc(room)}</h2>
+    <div class="card-panel center">
+      ${!conn ? "Подключаемся к интернету…" :
+        cur ? "Нашли комнату, заходим…" :
+        waited > 9000 ? "Комната не найдена. Проверь код — или попроси того, кто создал игру, держать экран включённым." :
+        "Ищем комнату…"}
+    </div>
+    <button class="btn secondary" data-act="leave">Назад</button>
+  </div>`;
+}
+function renderLocked(){
+  $app.innerHTML = `
+  <div class="col home">
+    <div class="logo">🦫</div>
+    <h2 class="center">Комната ${esc(room)}</h2>
+    <div class="card-panel center">Здесь уже идёт игра. Дождись конца партии — когда нажмут «Новая игра», ты сможешь войти.</div>
+    <button class="btn secondary" data-act="leave">Назад</button>
+  </div>`;
+}
+
+function inviteUrl(){ return location.origin + location.pathname + "?room=" + room; }
+function qrSVG(text){
+  try{ const q = qrcode(0, "M"); q.addData(text); q.make(); return q.createSvgTag({cellSize:4, margin:2, scalable:true}); }catch(e){ return ""; }
+}
+
+function renderLobby(){
+  const s = cur, amHost = s.host===myId;
+  $app.innerHTML = `
+  <div class="col lobby">
+    <div class="row"><span class="dot ${online()?"ok":""}"></span><span class="muted grow">Комната</span>
+      <button class="btn secondary small" data-act="leave">Выйти</button></div>
+    <div class="bigcode">${esc(room)}</div>
+    <div class="qr">${qrSVG(inviteUrl())}</div>
+    <p class="center muted" style="margin:0">Остальные наводят камеру на QR-код<br>или вводят код на главном экране</p>
+    <div class="row" style="justify-content:center">
+      <button class="btn secondary small" data-act="share">Отправить ссылку</button>
+      <button class="btn secondary small" data-act="copy">Скопировать</button>
+    </div>
+    <div class="card-panel col">
+      <div class="muted">Игроки (${s.players.length}/${MAX_PLAYERS})</div>
+      <ul class="plist">
+        ${s.players.map(p => `<li><span>${p.id===s.host?"👑":"🦫"}</span><span class="grow">${esc(p.name)}${p.id===myId?' <span class="muted">(ты)</span>':""}</span>
+          ${!isOnline(p.id)?'<span class="muted">нет связи</span>':""}
+          ${amHost && p.id!==myId ? `<button class="btn secondary small" data-act="kick" data-id="${esc(p.id)}">✕</button>`:""}</li>`).join("")}
+      </ul>
+    </div>
+    <div class="card-panel col">
+      <div class="muted">Играем до</div>
+      <div class="seg">
+        ${[50,100,200].map(t => `<button class="${s.target===t?"sel":""}" data-act="target" data-t="${t}" ${amHost?"":"disabled"}>${t} очков</button>`).join("")}
+      </div>
+      <div class="muted" style="font-size:13px">Как только кто-то набирает столько — игра заканчивается. Побеждает тот, у кого меньше всех.</div>
+    </div>
+    ${amHost
+      ? `<button class="btn" data-act="start" ${s.players.length<2?"disabled":""}>${s.players.length<2?"Ждём хотя бы ещё одного игрока…":"Начать игру!"}</button>`
+      : `<div class="status">Ждём, когда ${esc(pname(s, s.players.findIndex(p=>p.id===s.host)))} начнёт игру…</div>`}
+    <button class="linkbtn" data-act="rules">Правила игры</button>
+  </div>`;
+}
+
+function peekKey(){ return `peek:${room}:${cur.gid}:${cur.round}`; }
+
+function renderGame(){
+  const s = cur, mi = meIdx(), me = s.players[mi], n = s.players.length;
+  const myTurn = s.phase==="play" && s.turn===mi;
+  const needPeek = s.phase==="play" && !LS.get(peekKey());
+  const canAct = myTurn && !needPeek;
+  const top = s.discard[s.discard.length-1];
+  const now = Date.now();
+  if(ui.reveal && ui.reveal.until < now) ui.reveal = null;
+
+  // соперники по кругу после меня
+  const order = []; for(let k=1;k<n;k++) order.push((mi+k)%n);
+  const swapPick = canAct && s.step==="swap" && ui.sel!==null;
+  const oppsHTML = order.map(pi => {
+    const p = s.players[pi];
+    const marks = (s.turn===pi && s.phase==="play" ? "🎯 " : "") + (s.caller===pi ? "📣 " : "") + (!isOnline(p.id) ? "📵 " : "");
+    return `<div class="opp ${s.turn===pi && s.phase==="play"?"turn":""}">
+      <div class="nm">${marks}${esc(p.name)}<span class="sc">${p.total} очк.</span></div>
+      <div class="mini">${p.cards.map((c,i)=>cardHTML(c,{size:"sm", tap:swapPick, hl:isHl(pi,i), act:swapPick?"oppcard":"", data:{p:pi,i}})).join("")}</div>
+    </div>`;
+  }).join("");
+
+  // центр стола
+  const drawnVisible = s.drawn!==null && (myTurn || s.fromDiscard);
+  const drawnHTML = s.drawn===null ? "" : `<div class="pile">${cardHTML(s.drawn,{size:"mid", up:drawnVisible})}<span>${myTurn ? (s.fromDiscard?"взял из сброса":"твоя карта") : esc(pname(s,s.turn))+" думает"}</span></div>`;
+  const canDraw = canAct && s.step==="start";
+  const canTake = canDraw && isNum(top);
+  const tableHTML = `<div class="table">
+    <div class="pile">${cardHTML(0,{size:"mid", up:false, tap:canDraw, act:canDraw?"draw":""})}<span>колода · ${s.deck.length}</span></div>
+    <div class="pile">${cardHTML(top,{size:"mid", up:true, tap:canTake, act:canTake?"take":""})}<span>сброс</span></div>
+    ${drawnHTML}
+  </div>`;
+
+  // статус и кнопки
+  let status = "", actions = "";
+  const lastRound = s.caller!==null ? `<br><span class="muted">📣 ${esc(pname(s,s.caller))} сказал(а) «Стоп» — последний круг</span>` : "";
+  if(s.phase!=="play"){ status = "Раунд окончен"; }
+  else if(needPeek){
+    status = "Запомни свои <b>крайние</b> карты! Потом они перевернутся.";
+    actions = `<button class="btn" data-act="peekok">Запомнил(а) ✓</button>`;
+  }
+  else if(!myTurn){
+    const cp = s.players[s.turn];
+    status = `Ходит <b>${esc(cp.name)}</b>…` + lastRound;
+    if(!isOnline(cp.id)) actions = `<button class="btn secondary small" data-act="forceSkip">У ${esc(cp.name)} нет связи — пропустить ход</button>`;
+  } else {
+    const d2 = s.d2 ? ` <span class="muted">(«Ещё две»: карта ${s.d2===2?1:2} из 2)</span>` : "";
+    if(s.step==="start"){
+      status = `<b>Твой ход!</b> Тяни из колоды или возьми из сброса.` + (isNum(top) ? "" : `<br><span class="muted">Карту действия из сброса брать нельзя</span>`) + lastRound;
+      if(s.caller===null) actions = `<button class="btn ${s.stopReq?"on":"secondary"}" data-act="stop">${s.stopReq?"📣 «Стоп» после этого хода ✓":"📣 Сказать «Стоп»"}</button>`;
+    } else if(s.step==="drawn" && isNum(s.drawn)){
+      status = s.fromDiscard ? `Нажми свою карту, на место которой положить <b>${s.drawn}</b>.` : `Тебе пришла <b>${s.drawn}</b>. Нажми свою карту, чтобы заменить, — или сбрось.` ;
+      status += d2;
+      actions = s.fromDiscard ? `<button class="btn secondary" data-act="cancelTake">Отмена</button>` : `<button class="btn secondary" data-act="discard">Сбросить ${s.drawn}</button>`;
+      if(s.caller===null) actions += `<button class="btn ${s.stopReq?"on":"secondary"} small" data-act="stop">${s.stopReq?"📣 Стоп ✓":"📣 Стоп"}</button>`;
+    } else if(s.step==="drawn"){
+      status = `Карта действия <b>${SP[s.drawn].icon} ${SP[s.drawn].name}</b>: ${SP[s.drawn].desc}.` + d2;
+      actions = `<button class="btn" data-act="play">Сыграть ${SP[s.drawn].icon}</button><button class="btn secondary" data-act="discard">Сбросить</button>`;
+    } else if(s.step==="peek"){
+      status = `👁 Нажми любую свою карту — подсмотришь её.`;
+      actions = `<button class="btn secondary" data-act="skip">Пропустить</button>`;
+    } else if(s.step==="swap"){
+      status = ui.sel===null ? `🔄 Выбери <b>свою</b> карту для обмена.` : `Теперь нажми карту <b>соперника</b> (вверху).`;
+      actions = `<button class="btn secondary" data-act="skip">Пропустить</button>`;
+    }
+    if(s.step!=="start" && s.caller===null && s.stopReq && !actions.includes('data-act="stop"')) status += `<br><span class="muted">📣 После хода скажешь «Стоп»</span>`;
+  }
+
+  // мои карты
+  const tapMine = canAct && ((s.step==="drawn" && isNum(s.drawn)) || s.step==="peek" || s.step==="swap");
+  const myCards = me.cards.map((c,i) => {
+    const revealPeek = needPeek && (i===0 || i===3);
+    const revealAct = ui.reveal && ui.reveal.i===i;
+    const up = revealPeek || revealAct || s.phase!=="play";
+    return `<div>${cardHTML(c,{size:"big", up, tap:tapMine, sel:ui.sel===i, hl:isHl(mi,i), peek:revealAct||revealPeek, act:tapMine?"mycard":"", data:{i}})}<div class="lbl">№${i+1}</div></div>`;
+  }).join("");
+
+  const logHTML = s.log.slice(-4).reverse().map(l=>`<div>${esc(l)}</div>`).join("");
+
+  $app.innerHTML = `
+    <div class="top"><span class="dot ${online()?"ok":""}"></span><span>Комната <b>${esc(room)}</b> · раунд ${s.round} · до ${s.target}</span>
+      <span class="grow"></span><button class="btn secondary small" data-act="rules">?</button><button class="btn secondary small" data-act="menu">☰</button></div>
+    <div class="opps">${oppsHTML}</div>
+    ${tableHTML}
+    <div class="status">${status}</div>
+    <div class="me">
+      <div class="row" style="justify-content:space-between;margin:0 2px 6px"><b>${esc(me.name)} (ты)</b><span class="muted">${me.total} очк.</span></div>
+      <div class="mecards">${myCards}</div>
+    </div>
+    <div class="actions">${actions}</div>
+    <div class="log">${logHTML}</div>`;
+}
+
+function renderOverlay(){
+  let h = "";
+  if(ui.rules) h = rulesHTML();
+  else if(ui.menu) h = `<div class="ov" data-act="closeov"><div class="modal col" data-stop="1">
+      <h2>Меню</h2>
+      <div class="qr">${qrSVG(inviteUrl())}</div>
+      <p class="center muted" style="margin:0">Комната <b>${esc(room)}</b> — если кто-то вылетел, пусть зайдёт снова по коду</p>
+      <button class="btn secondary" data-act="closeov">Вернуться к игре</button>
+      <button class="btn danger" data-act="leave">Выйти из комнаты</button></div></div>`;
+  else if(cur && ui.view==="game" && (cur.phase==="roundEnd" || cur.phase==="gameEnd") && cur.reveal){
+    const s = cur, minT = Math.min(...s.players.map(p=>p.total)), minR = Math.min(...s.reveal.map(r=>r.score));
+    const winners = s.players.filter(p=>p.total===minT).map(p=>esc(p.name)).join(", ");
+    h = `<div class="ov"><div class="modal">
+      <h2>${s.phase==="gameEnd" ? `🏆 Победа: ${winners}!` : `Раунд ${s.round} окончен`}</h2>
+      <div class="res">
+        ${s.players.map((p,pi)=>{ const r = s.reveal[pi]; const win = s.phase==="gameEnd" ? p.total===minT : r.score===minR;
+          const was = r.orig.map((c,i)=>isNum(c)?"":`№${i+1} был ${SP[c].icon}`).filter(Boolean).join(", ");
+          return `<div class="r ${win?"win":""}">
+            <div class="top2"><span>${win?"⭐ ":""}${esc(p.name)}${p.id===myId?" (ты)":""}${s.caller===pi?" 📣":""}</span><span>+${r.score} → ${p.total}</span></div>
+            <div class="cards">${r.fin.map(c=>cardHTML(c,{size:"sm",up:true})).join("")}${was?`<span class="was">${was}</span>`:""}</div></div>`; }).join("")}
+      </div>
+      ${s.phase==="gameEnd"
+        ? `<button class="btn" style="width:100%" data-act="toLobby">Новая игра</button>`
+        : `<button class="btn" style="width:100%" data-act="nextRound">Следующий раунд</button>`}
+      <div class="center" style="margin-top:10px"><button class="linkbtn" data-act="leave">Выйти</button></div>
+    </div></div>`;
+  }
+  $ovl.innerHTML = h;
+}
+
+function rulesHTML(){
+  const mc = c => `<span class="mini-card">${cardHTML(c,{size:"sm",up:true})}</span>`;
+  return `<div class="ov" data-act="closeov"><div class="modal rules" data-stop="1">
+    <h2>Правила</h2>
+    <p><b>Цель:</b> к концу раунда собрать в своих четырёх карточках как можно меньшую сумму. Бобры ${mc(0)} — маленькие числа, крысы ${mc(9)} — большие.</p>
+    <p><b>Начало:</b> каждому раздают 4 карты рубашкой вверх. Один раз можно посмотреть две крайние — запомни их!</p>
+    <p><b>Ход:</b> возьми верхнюю карту из сброса (только число) и замени ею одну свою — или тяни из колоды. Карту из колоды можно положить вместо своей или сбросить.</p>
+    <p><b>Карты действия</b> (только из колоды):<br>
+      ${mc("P")} <b>Подсмотри</b> — посмотри одну свою карту.<br>
+      ${mc("S")} <b>Обмен</b> — поменяй любую свою карту на карту соперника, не глядя.<br>
+      ${mc("D")} <b>Ещё две</b> — тяни карту; не нравится — сбрось и тяни вторую. Если первую оставил — ход окончен.</p>
+    <p><b>«Стоп!»</b> Думаешь, что у тебя меньше всех? Нажми «Стоп» во время своего хода — после него у каждого остаётся по одному последнему ходу.</p>
+    <p><b>Подсчёт:</b> все карты открываются. Карты действия в раскладе заменяются картами из колоды. Сумма — твои очки за раунд. Когда кто-то набрал предел (50/100/200), побеждает игрок с наименьшей суммой.</p>
+    <button class="btn" style="width:100%" data-act="closeov">Понятно</button>
+  </div></div>`;
+}
+
+/* ============================================================
+   ОБРАБОТКА НАЖАТИЙ
+   ============================================================ */
+function saveName(){ const el = document.getElementById("homeName"); if(el){ myName = el.value.trim().slice(0,16); LS.set("name", myName); } return myName; }
+function needName(){ if(!saveName()){ ui.err = "Сначала введи имя 🙂"; $app.innerHTML=""; render(); setTimeout(()=>document.getElementById("homeName")?.focus(), 50); return false; } ui.err=""; return true; }
+function genCode(){ const a = "ABCDEFGHJKLMNPRSTUVWXYZ"; let s=""; for(let i=0;i<4;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
+
+function createRoom(){
+  if(!needName()) return;
+  const code = genCode();
+  connect(code);
+  cur = { code, v:1, w:myId, host:myId, phase:"lobby", target:100, round:0, starter:0, gid:"",
+    players:[{id:myId, name:myName, cards:[], total:0, hist:[]}], deck:[], discard:[], turn:0, step:"start",
+    drawn:null, fromDiscard:false, d2:0, caller:null, stopReq:false, reveal:null, log:["Комната создана"], evs:[], evn:"" };
+  LS.set("room", code); LS.set("state:"+code, cur);
+  publish("state", cur, true);
+  keepAwake(); render();
+}
+function joinRoom(code){
+  code = (code||"").toUpperCase().replace(/[^A-Z]/g,"").slice(0,4);
+  if(code.length!==4){ ui.err = "Код — это 4 буквы"; $app.innerHTML=""; render(); return; }
+  if(!needName()) return;
+  connect(code);
+  LS.set("room", code);
+  history.replaceState(null, "", location.pathname);
+  clearInterval(joinTimer);
+  const tryJoin = () => {
+    if(!room) return clearInterval(joinTimer);
+    if(cur && cur.players.some(p=>p.id===myId)){
+      // имя могло поменяться — ничего не делаем, просто стоп
+      clearInterval(joinTimer); return;
+    }
+    if(online()) publish("join", {id:myId, name:myName}, false);
+  };
+  joinTimer = setInterval(tryJoin, 1500); setTimeout(tryJoin, 700);
+  keepAwake(); render();
+}
+function leaveRoom(){
+  if(cur && cur.phase==="lobby" && meIdx()>=0) doAct("removePlayer", {id:myId});
+  const r = room;
+  setTimeout(() => { disconnect(); if(r) LS.del("state:"+r); LS.del("room"); ui.menu=false; $app.innerHTML=""; render(); }, 300);
+}
+
+let wakeLock = null;
+async function keepAwake(){ try{ if("wakeLock" in navigator && !wakeLock){ wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", ()=>{ wakeLock=null; }); } }catch(e){} }
+document.addEventListener("visibilitychange", () => { if(document.visibilityState==="visible" && room){ keepAwake(); render(); } });
+
+document.addEventListener("click", (e) => {
+  const stopEl = e.target.closest("[data-stop]");
+  const el = e.target.closest("[data-act]");
+  if(!el) return;
+  if(stopEl && !stopEl.contains(el)) return;
+  if(stopEl && el.dataset.act==="closeov" && el.classList.contains("ov")) return;
+  const act = el.dataset.act;
+  switch(act){
+    case "create": createRoom(); break;
+    case "join": joinRoom(document.getElementById("homeCode")?.value); break;
+    case "joinPre": joinRoom(params.get("room")); break;
+    case "rejoin": { const code = el.dataset.code; if(!needName()) return; connect(code); keepAwake(); render();
+      clearInterval(joinTimer); joinTimer = setInterval(()=>{ if(cur && cur.players.some(p=>p.id===myId)) clearInterval(joinTimer); else if(online() && cur?.phase==="lobby") publish("join",{id:myId,name:myName},false); }, 1500); break; }
+    case "leave": leaveRoom(); break;
+    case "rules": ui.rules = true; renderOverlay(); break;
+    case "menu": ui.menu = true; renderOverlay(); break;
+    case "closeov": ui.rules = false; ui.menu = false; renderOverlay(); break;
+    case "share": {
+      const url = inviteUrl();
+      if(navigator.share) navigator.share({title:"Бобры", text:`Заходи играть в Бобров! Код комнаты: ${room}`, url}).catch(()=>{});
+      else copyText(url);
+      break; }
+    case "copy": copyText(inviteUrl()); break;
+    case "kick": doAct("removePlayer", {id:el.dataset.id}); break;
+    case "target": doAct("setTarget", {target:+el.dataset.t}); break;
+    case "start": doAct("start"); break;
+    case "nextRound": doAct("nextRound"); break;
+    case "toLobby": doAct("toLobby"); break;
+    case "peekok": LS.set(peekKey(), 1); render(); break;
+    case "draw": case "take": case "cancelTake": case "discard": case "play": case "skip": case "stop": doAct(act); break;
+    case "forceSkip": doAct("forceSkip"); break;
+    case "mycard": {
+      const i = +el.dataset.i, s = cur;
+      if(s.step==="drawn") doAct("place", {i});
+      else if(s.step==="peek"){ doAct("peek", {i}); ui.reveal = {i, until: Date.now()+3500}; render(); setTimeout(render, 3600); }
+      else if(s.step==="swap"){ ui.sel = ui.sel===i ? null : i; render(); }
+      break; }
+    case "oppcard": if(ui.sel!==null) doAct("swap", {mi:ui.sel, p:+el.dataset.p, oi:+el.dataset.i}); break;
+  }
+});
+document.addEventListener("keydown", (e) => {
+  if(e.key==="Enter"){
+    if(document.activeElement?.id==="homeCode") joinRoom(document.activeElement.value);
+    else if(document.activeElement?.id==="homeName" && params.get("room")) joinRoom(params.get("room"));
+  }
+});
+document.addEventListener("input", (e) => { if(e.target.id==="homeName"){ myName = e.target.value.trim().slice(0,16); LS.set("name", myName); } });
+function copyText(t){
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(()=>toast("Ссылка скопирована")).catch(()=>toast(esc(t), 6000));
+}
+
+// обновление «нет связи» и подсветки раз в 3 секунды
+setInterval(() => { if(ui.view==="game" || ui.view==="lobby" || ui.view==="joining") render(); }, 3000);
+
+// старт: если есть незаконченная комната — вернуться туда
+(function boot(){
+  const last = LS.get("room");
+  if(last && !params.get("room")){
+    connect(last);
+    joinTimer = setInterval(()=>{ if(cur && cur.players.some(p=>p.id===myId)) clearInterval(joinTimer); else if(online() && cur && cur.phase==="lobby") publish("join",{id:myId,name:myName},false); }, 1500);
+  }
+  render();
+})();
+</script>
+</body>
+</html>
